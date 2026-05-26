@@ -2,8 +2,8 @@
 
 ## 文件
 
-- `output/CC-Switch_3.15.0_amd64.AppImage`
-- `output/CC-Switch_3.15.0_amd64.zip`
+- `CC-Switch_3.15.0_amd64.AppImage`
+- `CC-Switch_3.15.0_amd64.zip`
 
 ## 校验
 

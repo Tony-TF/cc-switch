@@ -40,6 +40,34 @@ interface RequestLogTableProps {
   appType?: string;
   refreshIntervalMs: number;
   onRangeChange?: (range: UsageRangeSelection) => void;
+  enabled?: boolean;
+}
+
+function formatLogTime(value: unknown, locale: string): string {
+  const seconds = parseFiniteNumber(value);
+  if (seconds == null || seconds <= 0) return "--";
+
+  const date = new Date(seconds * 1000);
+  if (!Number.isFinite(date.getTime())) return "--";
+
+  return date.toLocaleString(locale, {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatDurationSeconds(value: unknown): string {
+  const ms = parseFiniteNumber(value);
+  if (ms == null || ms < 0) return "--";
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function getSafeStatusCode(value: unknown): number | null {
+  const statusCode = parseFiniteNumber(value);
+  if (statusCode == null || statusCode < 0) return null;
+  return Math.trunc(statusCode);
 }
 
 export function RequestLogTable({
@@ -48,6 +76,7 @@ export function RequestLogTable({
   appType: dashboardAppType,
   refreshIntervalMs,
   onRangeChange,
+  enabled = true,
 }: RequestLogTableProps) {
   const { t, i18n } = useTranslation();
 
@@ -68,6 +97,7 @@ export function RequestLogTable({
     page,
     pageSize,
     options: {
+      enabled,
       refetchInterval: refreshIntervalMs > 0 ? refreshIntervalMs : false,
     },
   });
@@ -296,18 +326,11 @@ export function RequestLogTable({
                 ) : (
                   logs.map((log) => {
                     const unpriced = isUnpricedUsage(log);
+                    const statusCode = getSafeStatusCode(log.statusCode);
                     return (
                       <TableRow key={log.requestId}>
                         <TableCell className="text-center whitespace-nowrap text-xs px-1.5">
-                          {new Date(log.createdAt * 1000).toLocaleString(
-                            locale,
-                            {
-                              month: "2-digit",
-                              day: "2-digit",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
-                          )}
+                          {formatLogTime(log.createdAt, locale)}
                         </TableCell>
                         <TableCell className="text-center">
                           {log.providerName || t("usage.unknownProvider")}
@@ -391,22 +414,24 @@ export function RequestLogTable({
                             )}
                         </TableCell>
                         <TableCell className="text-center whitespace-nowrap text-xs tabular-nums">
-                          {(log.latencyMs / 1000).toFixed(1)}s
+                          {formatDurationSeconds(log.latencyMs)}
                           {log.firstTokenMs != null && (
                             <span className="text-muted-foreground">
-                              /{(log.firstTokenMs / 1000).toFixed(1)}s
+                              /{formatDurationSeconds(log.firstTokenMs)}
                             </span>
                           )}
                         </TableCell>
                         <TableCell className="text-center">
                           <span
                             className={
-                              log.statusCode >= 200 && log.statusCode < 300
+                              statusCode != null &&
+                              statusCode >= 200 &&
+                              statusCode < 300
                                 ? "text-green-600"
                                 : "text-red-600"
                             }
                           >
-                            {log.statusCode}
+                            {statusCode ?? "--"}
                           </span>
                         </TableCell>
                         <TableCell className="text-center text-xs text-muted-foreground">

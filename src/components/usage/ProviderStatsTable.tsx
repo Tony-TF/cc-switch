@@ -15,15 +15,18 @@ interface ProviderStatsTableProps {
   range: UsageRangeSelection;
   appType?: string;
   refreshIntervalMs: number;
+  enabled?: boolean;
 }
 
 export function ProviderStatsTable({
   range,
   appType,
   refreshIntervalMs,
+  enabled = true,
 }: ProviderStatsTableProps) {
   const { t } = useTranslation();
   const { data: stats, isLoading } = useProviderStats(range, appType, {
+    enabled,
     refetchInterval: refreshIntervalMs > 0 ? refreshIntervalMs : false,
   });
 

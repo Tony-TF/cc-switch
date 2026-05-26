@@ -44,11 +44,11 @@ import { ModelTestConfigPanel } from "@/components/usage/ModelTestConfigPanel";
 import { UsageDashboard } from "@/components/usage/UsageDashboard";
 import { LogConfigPanel } from "@/components/settings/LogConfigPanel";
 import { AuthCenterPanel } from "@/components/settings/AuthCenterPanel";
-import { useInstalledSkills } from "@/hooks/useSkills";
 import { useSettings } from "@/hooks/useSettings";
 import { useImportExport } from "@/hooks/useImportExport";
 import { useTranslation } from "react-i18next";
 import type { SettingsFormState } from "@/hooks/useSettings";
+import { skillsApi } from "@/lib/api/skills";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -64,6 +64,9 @@ export function SettingsPage({
   defaultTab = "general",
 }: SettingsDialogProps) {
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<string>(() => defaultTab);
+  const [showRestartPrompt, setShowRestartPrompt] = useState(false);
+
   const {
     settings,
     isLoading,
@@ -82,7 +85,10 @@ export function SettingsPage({
     autoSaveSettings,
     requiresRestart,
     acknowledgeRestart,
-  } = useSettings();
+  } = useSettings({
+    loadDirectories: activeTab === "advanced",
+    loadMetadata: activeTab === "about",
+  });
 
   const {
     selectedFile,
@@ -96,11 +102,6 @@ export function SettingsPage({
     clearSelection,
     resetStatus,
   } = useImportExport({ onImportSuccess });
-
-  const { data: installedSkills } = useInstalledSkills();
-
-  const [activeTab, setActiveTab] = useState<string>("general");
-  const [showRestartPrompt, setShowRestartPrompt] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -180,6 +181,11 @@ export function SettingsPage({
     [autoSaveSettings, settings, t, updateSettings],
   );
 
+  const loadInstalledSkillsCount = useCallback(async () => {
+    const skills = await skillsApi.getInstalled();
+    return skills.length;
+  }, []);
+
   const isBusy = useMemo(() => isLoading && !settings, [isLoading, settings]);
 
   return (
@@ -230,7 +236,7 @@ export function SettingsPage({
                     />
                     <SkillStorageLocationSettings
                       value={settings.skillStorageLocation ?? "cc_switch"}
-                      installedCount={installedSkills?.length ?? 0}
+                      loadInstalledCount={loadInstalledSkillsCount}
                       onMigrated={(location) =>
                         updateSettings({ skillStorageLocation: location })
                       }

@@ -8,10 +8,7 @@ import { usageApi, settingsApi, type AppId } from "@/lib/api";
 import { copilotGetUsage, copilotGetUsageForAccount } from "@/lib/api/copilot";
 import { useSettingsQuery } from "@/lib/query";
 import { resolveManagedAccountId } from "@/lib/authBinding";
-import {
-  extractCodexBaseUrl,
-  extractCodexExperimentalBearerToken,
-} from "@/utils/providerConfigUtils";
+import { extractCodexBaseUrl } from "@/utils/providerConfigUtils";
 import JsonEditor from "./JsonEditor";
 import * as prettier from "prettier/standalone";
 import * as parserBabel from "prettier/parser-babel";
@@ -176,12 +173,8 @@ const UsageScriptModal: React.FC<UsageScriptModalProps> = ({
         // Codex: { auth: { OPENAI_API_KEY }, config: TOML string with base_url }
         const auth = (config as any).auth || {};
         const configToml = (config as any).config || "";
-        const apiKey =
-          typeof auth.OPENAI_API_KEY === "string" && auth.OPENAI_API_KEY.trim()
-            ? auth.OPENAI_API_KEY
-            : extractCodexExperimentalBearerToken(configToml);
         return {
-          apiKey,
+          apiKey: auth.OPENAI_API_KEY,
           baseUrl: extractCodexBaseUrl(configToml),
         };
       } else if (appId === "gemini") {

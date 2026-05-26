@@ -17,26 +17,44 @@ import type { SkillStorageLocation } from "@/types";
 
 export interface SkillStorageLocationSettingsProps {
   value: SkillStorageLocation;
-  installedCount: number;
+  installedCount?: number;
+  loadInstalledCount?: () => Promise<number>;
   onMigrated: (target: SkillStorageLocation) => void;
 }
 
 export function SkillStorageLocationSettings({
   value,
   installedCount,
+  loadInstalledCount,
   onMigrated,
 }: SkillStorageLocationSettingsProps) {
   const { t } = useTranslation();
   const [pendingTarget, setPendingTarget] =
     useState<SkillStorageLocation | null>(null);
+  const [pendingInstalledCount, setPendingInstalledCount] = useState(0);
+  const [isCheckingCount, setIsCheckingCount] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
 
-  const handleSelect = (target: SkillStorageLocation) => {
-    if (target === value) return;
-    if (installedCount > 0) {
-      setPendingTarget(target);
-    } else {
-      doMigrate(target);
+  const handleSelect = async (target: SkillStorageLocation) => {
+    if (target === value || isMigrating || isCheckingCount) return;
+
+    setIsCheckingCount(true);
+    try {
+      const count = installedCount ?? (await loadInstalledCount?.()) ?? 0;
+      setPendingInstalledCount(count);
+      if (count > 0) {
+        setPendingTarget(target);
+        return;
+      }
+      await doMigrate(target);
+    } catch (error) {
+      console.error(
+        "[SkillStorageLocationSettings] Failed to load installed skills count",
+        error,
+      );
+      toast.error(String(error));
+    } finally {
+      setIsCheckingCount(false);
     }
   };
 
@@ -67,6 +85,8 @@ export function SkillStorageLocationSettings({
     }
   };
 
+  const isBusy = isMigrating || isCheckingCount;
+
   return (
     <section className="space-y-2">
       <header className="space-y-1">
@@ -80,17 +100,20 @@ export function SkillStorageLocationSettings({
       <div className="inline-flex gap-1 rounded-md border border-border-default bg-background p-1">
         <StorageButton
           active={value === "cc_switch"}
-          disabled={isMigrating}
+          disabled={isBusy}
           onClick={() => handleSelect("cc_switch")}
         >
+          {isCheckingCount && value !== "cc_switch" ? (
+            <Loader2 size={14} className="mr-1 animate-spin" />
+          ) : null}
           {t("settings.skillStorage.ccSwitch")}
         </StorageButton>
         <StorageButton
           active={value === "unified"}
-          disabled={isMigrating}
+          disabled={isBusy}
           onClick={() => handleSelect("unified")}
         >
-          {isMigrating && value !== "unified" ? (
+          {(isMigrating || isCheckingCount) && value !== "unified" ? (
             <Loader2 size={14} className="mr-1 animate-spin" />
           ) : null}
           {t("settings.skillStorage.unified")}
@@ -114,7 +137,7 @@ export function SkillStorageLocationSettings({
             <DialogTitle>{t("settings.skillStorage.confirmTitle")}</DialogTitle>
             <DialogDescription>
               {t("settings.skillStorage.confirmMessage", {
-                count: installedCount,
+                count: pendingInstalledCount,
               })}
             </DialogDescription>
           </DialogHeader>

@@ -6,6 +6,7 @@ import type { LogFilters, UsageRangeSelection } from "@/types/usage";
 const DEFAULT_REFETCH_INTERVAL_MS = 30000;
 
 type UsageQueryOptions = {
+  enabled?: boolean;
   refetchInterval?: number | false;
   refetchIntervalInBackground?: boolean;
 };
@@ -140,6 +141,7 @@ export function useUsageSummary(
       const { startDate, endDate } = resolveUsageRange(range);
       return usageApi.getUsageSummary(startDate, endDate, effectiveAppType);
     },
+    enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval ?? DEFAULT_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: options?.refetchIntervalInBackground ?? false,
   });
@@ -159,6 +161,7 @@ export function useUsageSummaryByApp(
       const { startDate, endDate } = resolveUsageRange(range);
       return usageApi.getUsageSummaryByApp(startDate, endDate);
     },
+    enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval ?? DEFAULT_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: options?.refetchIntervalInBackground ?? false,
   });
@@ -181,6 +184,7 @@ export function useUsageTrends(
       const { startDate, endDate } = resolveUsageRange(range);
       return usageApi.getUsageTrends(startDate, endDate, effectiveAppType);
     },
+    enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval ?? DEFAULT_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: options?.refetchIntervalInBackground ?? false,
   });
@@ -203,6 +207,7 @@ export function useProviderStats(
       const { startDate, endDate } = resolveUsageRange(range);
       return usageApi.getProviderStats(startDate, endDate, effectiveAppType);
     },
+    enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval ?? DEFAULT_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: options?.refetchIntervalInBackground ?? false,
   });
@@ -225,6 +230,7 @@ export function useModelStats(
       const { startDate, endDate } = resolveUsageRange(range);
       return usageApi.getModelStats(startDate, endDate, effectiveAppType);
     },
+    enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval ?? DEFAULT_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: options?.refetchIntervalInBackground ?? false,
   });
@@ -253,6 +259,7 @@ export function useRequestLogs({
       const effectiveFilters = { ...filters, ...resolveUsageRange(range) };
       return usageApi.getRequestLogs(effectiveFilters, page, pageSize);
     },
+    enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval ?? DEFAULT_REFETCH_INTERVAL_MS, // 每30秒自动刷新
     refetchIntervalInBackground: options?.refetchIntervalInBackground ?? false,
   });

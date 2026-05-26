@@ -31,6 +31,7 @@ interface UsageHeroProps {
   range: UsageRangeSelection;
   appType?: string;
   refreshIntervalMs: number;
+  enabled?: boolean;
 }
 
 interface TitleTheme {
@@ -130,11 +131,13 @@ export function UsageHero({
   range,
   appType,
   refreshIntervalMs,
+  enabled = true,
 }: UsageHeroProps) {
   const { t, i18n } = useTranslation();
   const lang = getResolvedLang(i18n);
 
   const { data, isLoading } = useUsageSummaryByApp(range, {
+    enabled,
     refetchInterval: refreshIntervalMs > 0 ? refreshIntervalMs : false,
   });
 

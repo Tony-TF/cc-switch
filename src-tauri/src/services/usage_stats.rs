@@ -173,24 +173,48 @@ fn row_to_request_log_detail(row: &rusqlite::Row<'_>) -> rusqlite::Result<Reques
         cost_multiplier: row
             .get::<_, Option<String>>(6)?
             .unwrap_or_else(|| "1".to_string()),
-        input_tokens: row.get::<_, i64>(7)? as u32,
-        output_tokens: row.get::<_, i64>(8)? as u32,
-        cache_read_tokens: row.get::<_, i64>(9)? as u32,
-        cache_creation_tokens: row.get::<_, i64>(10)? as u32,
+        input_tokens: clamp_i64_to_u32(row.get(7)?),
+        output_tokens: clamp_i64_to_u32(row.get(8)?),
+        cache_read_tokens: clamp_i64_to_u32(row.get(9)?),
+        cache_creation_tokens: clamp_i64_to_u32(row.get(10)?),
         input_cost_usd: row.get(11)?,
         output_cost_usd: row.get(12)?,
         cache_read_cost_usd: row.get(13)?,
         cache_creation_cost_usd: row.get(14)?,
         total_cost_usd: row.get(15)?,
         is_streaming: row.get::<_, i64>(16)? != 0,
-        latency_ms: row.get::<_, i64>(17)? as u64,
-        first_token_ms: row.get::<_, Option<i64>>(18)?.map(|v| v as u64),
-        duration_ms: row.get::<_, Option<i64>>(19)?.map(|v| v as u64),
-        status_code: row.get::<_, i64>(20)? as u16,
+        latency_ms: clamp_i64_to_u64(row.get(17)?),
+        first_token_ms: row.get::<_, Option<i64>>(18)?.map(clamp_i64_to_u64),
+        duration_ms: row.get::<_, Option<i64>>(19)?.map(clamp_i64_to_u64),
+        status_code: clamp_i64_to_u16(row.get(20)?),
         error_message: row.get(21)?,
         created_at: row.get(22)?,
         data_source: row.get(23)?,
     })
+}
+
+fn clamp_i64_to_u32(value: i64) -> u32 {
+    if value <= 0 {
+        0
+    } else {
+        u32::try_from(value).unwrap_or(u32::MAX)
+    }
+}
+
+fn clamp_i64_to_u64(value: i64) -> u64 {
+    if value <= 0 {
+        0
+    } else {
+        u64::try_from(value).unwrap_or(u64::MAX)
+    }
+}
+
+fn clamp_i64_to_u16(value: i64) -> u16 {
+    if value <= 0 {
+        0
+    } else {
+        u16::try_from(value).unwrap_or(u16::MAX)
+    }
 }
 
 /// SQL fragment: resolve provider_name with fallback for session-based entries.

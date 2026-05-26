@@ -87,6 +87,7 @@ const computeDefaultConfigDir = async (
 export interface UseDirectorySettingsProps {
   settings: SettingsFormState | null;
   onUpdateSettings: (updates: Partial<SettingsFormState>) => void;
+  enabled?: boolean;
 }
 
 export interface UseDirectorySettingsResult {
@@ -119,6 +120,7 @@ export type ResolvedAppDirectoryOverrides = Partial<
 export function useDirectorySettings({
   settings,
   onUpdateSettings,
+  enabled = true,
 }: UseDirectorySettingsProps): UseDirectorySettingsResult {
   const { t } = useTranslation();
 
@@ -134,7 +136,7 @@ export function useDirectorySettings({
     openclaw: "",
     hermes: "",
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(enabled);
 
   const defaultsRef = useRef<ResolvedDirectories>({
     appConfig: "",
@@ -149,6 +151,11 @@ export function useDirectorySettings({
 
   // 加载目录信息
   useEffect(() => {
+    if (!enabled) {
+      setIsLoading(false);
+      return;
+    }
+
     let active = true;
     setIsLoading(true);
 
@@ -228,7 +235,7 @@ export function useDirectorySettings({
     return () => {
       active = false;
     };
-  }, []);
+  }, [enabled]);
 
   const updateDirectoryState = useCallback(
     (key: DirectoryKey, value?: string) => {

@@ -16,6 +16,12 @@ fn main() {
         if std::env::var("WEBKIT_DISABLE_COMPOSITING_MODE").is_err() {
             std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
         }
+        // Ubuntu 20.04 + AppImage may still enter Mesa/GBM GPU code paths when
+        // rendering heavier settings views. Force software GL to avoid UI
+        // freezes without reintroducing a direct webkit2gtk Rust dependency.
+        if std::env::var("LIBGL_ALWAYS_SOFTWARE").is_err() {
+            std::env::set_var("LIBGL_ALWAYS_SOFTWARE", "1");
+        }
     }
 
     cc_switch_lib::run();

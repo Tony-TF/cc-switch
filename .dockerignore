@@ -1,0 +1,12 @@
+node_modules
+dist
+src-tauri/target
+.git
+.github
+*.AppImage
+*.deb
+*.rpm
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*

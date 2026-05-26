@@ -15,15 +15,18 @@ interface ModelStatsTableProps {
   range: UsageRangeSelection;
   appType?: string;
   refreshIntervalMs: number;
+  enabled?: boolean;
 }
 
 export function ModelStatsTable({
   range,
   appType,
   refreshIntervalMs,
+  enabled = true,
 }: ModelStatsTableProps) {
   const { t } = useTranslation();
   const { data: stats, isLoading } = useModelStats(range, appType, {
+    enabled,
     refetchInterval: refreshIntervalMs > 0 ? refreshIntervalMs : false,
   });
 

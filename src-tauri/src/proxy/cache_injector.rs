@@ -52,11 +52,8 @@ pub fn inject(body: &mut Value, config: &OptimizerConfig) {
     // (b) system 末尾
     if budget > 0 {
         // 字符串 system → 转为数组
-        if let Some(text) = body
-            .get("system")
-            .and_then(|s| s.as_str())
-            .map(str::to_string)
-        {
+        if body.get("system").and_then(|s| s.as_str()).is_some() {
+            let text = body["system"].as_str().unwrap().to_string();
             body["system"] = json!([{"type": "text", "text": text}]);
         }
 

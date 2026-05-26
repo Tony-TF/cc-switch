@@ -14,6 +14,8 @@ import {
 } from "./useDirectorySettings";
 import { useSettingsMetadata } from "./useSettingsMetadata";
 
+type Language = "zh" | "en" | "ja";
+
 interface SaveResult {
   requiresRestart: boolean;
 }
@@ -46,6 +48,11 @@ export interface UseSettingsResult {
 
 export type { SettingsFormState, ResolvedDirectories };
 
+export interface UseSettingsOptions {
+  loadDirectories?: boolean;
+  loadMetadata?: boolean;
+}
+
 const sanitizeDir = (value?: string | null): string | undefined => {
   if (!value) return undefined;
   const trimmed = value.trim();
@@ -59,7 +66,8 @@ const sanitizeDir = (value?: string | null): string | undefined => {
  * - 保存设置逻辑
  * - 重置设置逻辑
  */
-export function useSettings(): UseSettingsResult {
+export function useSettings(options: UseSettingsOptions = {}): UseSettingsResult {
+  const { loadDirectories = true, loadMetadata = true } = options;
   const { t } = useTranslation();
   const { data } = useSettingsQuery();
   const saveMutation = useSaveSettingsMutation();
@@ -91,6 +99,7 @@ export function useSettings(): UseSettingsResult {
   } = useDirectorySettings({
     settings,
     onUpdateSettings: updateSettings,
+    enabled: loadDirectories,
   });
 
   // 3️⃣ 元数据管理
@@ -100,7 +109,7 @@ export function useSettings(): UseSettingsResult {
     isLoading: isMetadataLoading,
     acknowledgeRestart,
     setRequiresRestart,
-  } = useSettingsMetadata();
+  } = useSettingsMetadata({ enabled: loadMetadata });
 
   // 重置设置
   const resetSettings = useCallback(() => {
@@ -400,8 +409,11 @@ export function useSettings(): UseSettingsResult {
         );
 
         try {
-          if (typeof window !== "undefined" && payload.language) {
-            window.localStorage.setItem("language", payload.language);
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem(
+              "language",
+              payload.language as Language,
+            );
           }
         } catch (error) {
           console.warn(

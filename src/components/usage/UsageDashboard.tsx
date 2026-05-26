@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { UsageHero } from "./UsageHero";
 import { UsageTrendChart } from "./UsageTrendChart";
@@ -10,7 +10,6 @@ import {
   type AppTypeFilter,
   type UsageRangeSelection,
 } from "@/types/usage";
-import { motion } from "framer-motion";
 import {
   BarChart3,
   ListFilter,
@@ -41,7 +40,18 @@ export function UsageDashboard() {
   const queryClient = useQueryClient();
   const [range, setRange] = useState<UsageRangeSelection>({ preset: "today" });
   const [appType, setAppType] = useState<AppTypeFilter>("all");
-  const [refreshIntervalMs, setRefreshIntervalMs] = useState(30000);
+  const [refreshIntervalMs, setRefreshIntervalMs] = useState(0);
+  const [activeUsageTab, setActiveUsageTab] = useState("logs");
+  const [openSections, setOpenSections] = useState<string[]>([]);
+  const [canLoadActiveTab, setCanLoadActiveTab] = useState(false);
+
+  useEffect(() => {
+    setCanLoadActiveTab(false);
+    const timer = window.setTimeout(() => {
+      setCanLoadActiveTab(true);
+    }, 200);
+    return () => window.clearTimeout(timer);
+  }, [activeUsageTab]);
 
   const refreshIntervalOptionsMs = [0, 5000, 10000, 30000, 60000] as const;
   const changeRefreshInterval = () => {
@@ -69,12 +79,7 @@ export function UsageDashboard() {
   }, [locale, range, resolvedRange.endDate, resolvedRange.startDate, t]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="space-y-8 pb-8"
-    >
+    <div className="space-y-8 pb-8">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
@@ -126,23 +131,18 @@ export function UsageDashboard() {
         </div>
       </div>
 
-      <UsageHero
-        range={range}
-        appType={appType === "all" ? undefined : appType}
-        refreshIntervalMs={refreshIntervalMs}
-      />
-
-      <UsageTrendChart
-        range={range}
-        rangeLabel={rangeLabel}
-        appType={appType}
-        refreshIntervalMs={refreshIntervalMs}
-      />
-
       <div className="space-y-4">
-        <Tabs defaultValue="logs" className="w-full">
+        <Tabs
+          value={activeUsageTab}
+          onValueChange={setActiveUsageTab}
+          className="w-full"
+        >
           <div className="flex items-center justify-between mb-4">
             <TabsList className="bg-muted/50">
+              <TabsTrigger value="overview" className="gap-2">
+                <BarChart3 className="h-4 w-4" />
+                {t("usage.overview", { defaultValue: "概览" })}
+              </TabsTrigger>
               <TabsTrigger value="logs" className="gap-2">
                 <ListFilter className="h-4 w-4" />
                 {t("usage.requestLogs")}
@@ -158,41 +158,72 @@ export function UsageDashboard() {
             </TabsList>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
+          <div>
+            <TabsContent value="overview" className="mt-0 space-y-8">
+              {activeUsageTab === "overview" && (
+                <>
+                  <UsageHero
+                    range={range}
+                    appType={appType === "all" ? undefined : appType}
+                    refreshIntervalMs={refreshIntervalMs}
+                    enabled={canLoadActiveTab}
+                  />
+
+                  <UsageTrendChart
+                    range={range}
+                    rangeLabel={rangeLabel}
+                    appType={appType}
+                    refreshIntervalMs={refreshIntervalMs}
+                    enabled={canLoadActiveTab}
+                  />
+                </>
+              )}
+            </TabsContent>
+
             <TabsContent value="logs" className="mt-0">
-              <RequestLogTable
-                range={range}
-                rangeLabel={rangeLabel}
-                appType={appType}
-                refreshIntervalMs={refreshIntervalMs}
-                onRangeChange={setRange}
-              />
+              {activeUsageTab === "logs" && (
+                <RequestLogTable
+                  range={range}
+                  rangeLabel={rangeLabel}
+                  appType={appType}
+                  refreshIntervalMs={refreshIntervalMs}
+                  onRangeChange={setRange}
+                  enabled={canLoadActiveTab}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="providers" className="mt-0">
-              <ProviderStatsTable
-                range={range}
-                appType={appType}
-                refreshIntervalMs={refreshIntervalMs}
-              />
+              {activeUsageTab === "providers" && (
+                <ProviderStatsTable
+                  range={range}
+                  appType={appType}
+                  refreshIntervalMs={refreshIntervalMs}
+                  enabled={canLoadActiveTab}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="models" className="mt-0">
-              <ModelStatsTable
-                range={range}
-                appType={appType}
-                refreshIntervalMs={refreshIntervalMs}
-              />
+              {activeUsageTab === "models" && (
+                <ModelStatsTable
+                  range={range}
+                  appType={appType}
+                  refreshIntervalMs={refreshIntervalMs}
+                  enabled={canLoadActiveTab}
+                />
+              )}
             </TabsContent>
-          </motion.div>
+          </div>
         </Tabs>
       </div>
 
-      <Accordion type="multiple" defaultValue={[]} className="w-full space-y-4">
+      <Accordion
+        type="multiple"
+        value={openSections}
+        onValueChange={setOpenSections}
+        className="w-full space-y-4"
+      >
         <AccordionItem
           value="pricing"
           className="rounded-xl glass-card overflow-hidden"
@@ -211,10 +242,10 @@ export function UsageDashboard() {
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-6 pb-6 pt-4 border-t border-border/50">
-            <PricingConfigPanel />
+            {openSections.includes("pricing") && <PricingConfigPanel />}
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-    </motion.div>
+    </div>
   );
 }
